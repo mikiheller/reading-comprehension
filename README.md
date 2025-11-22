@@ -12,23 +12,28 @@ A fun, interactive reading comprehension website for young readers! This app gen
 
 ## Setup Instructions
 
-### 1. Get an OpenAI API Key
+### For Vercel Deployment (Recommended)
 
-1. Go to [OpenAI's website](https://platform.openai.com/)
-2. Sign up or log in to your account
-3. Navigate to API Keys section
-4. Create a new API key
-5. Copy the key (you won't be able to see it again!)
+1. **Get an OpenAI API Key**
+   - Go to [OpenAI's website](https://platform.openai.com/)
+   - Sign up or log in to your account
+   - Navigate to API Keys section
+   - Create a new API key
+   - Copy the key (you won't be able to see it again!)
 
-### 2. Add Your API Key
+2. **Deploy to Vercel**
+   - Push this code to GitHub
+   - Go to [Vercel](https://vercel.com) and import your repository
+   - In the Vercel project settings, add an Environment Variable:
+     - Name: `OPENAI_API_KEY`
+     - Value: Your OpenAI API key
+   - Deploy!
 
-Open `script.js` and replace `YOUR_API_KEY_HERE` with your actual API key:
+The serverless function (`/api/chat.js`) keeps your API key secure on the server.
 
-```javascript
-const OPENAI_API_KEY = 'sk-your-actual-key-here';
-```
+### For Local Development
 
-### 3. Run the Website
+### 1. Run the Website
 
 Since this uses browser APIs and makes external API calls, you need to run it through a local server:
 

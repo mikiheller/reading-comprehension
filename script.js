@@ -1,16 +1,4 @@
-// Configuration - Get API key from localStorage or prompt user
-let OPENAI_API_KEY = localStorage.getItem('openai_api_key') || '';
-
-// Function to get or set API key
-function getApiKey() {
-    if (!OPENAI_API_KEY) {
-        OPENAI_API_KEY = prompt('Please enter your OpenAI API key (it will be stored securely in your browser):');
-        if (OPENAI_API_KEY) {
-            localStorage.setItem('openai_api_key', OPENAI_API_KEY);
-        }
-    }
-    return OPENAI_API_KEY;
-}
+// No API key needed in frontend - it's handled by the serverless function!
 
 // State management
 let currentPassage = '';
@@ -73,13 +61,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Generate a new reading passage and questions
 async function generateNewStory() {
-    // Make sure we have an API key
-    const apiKey = getApiKey();
-    if (!apiKey) {
-        alert('API key is required to generate stories. Please refresh and enter your OpenAI API key.');
-        return;
-    }
-
     // Get user configuration
     userConfig.gradeLevel = document.getElementById('gradeLevel').value;
     userConfig.storyLength = document.getElementById('storyLength').value;
@@ -103,11 +84,11 @@ async function generateNewStory() {
     document.getElementById('feedback2').style.display = 'none';
 
     try {
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        // Call our serverless function instead of OpenAI directly
+        const response = await fetch('/api/chat', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${OPENAI_API_KEY}`
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 model: 'gpt-4o-mini',
@@ -341,11 +322,11 @@ async function assessAnswer(questionIndex, spokenAnswer) {
     feedbackDiv.style.color = '#1565c0';
 
     try {
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        // Call our serverless function instead of OpenAI directly
+        const response = await fetch('/api/chat', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${getApiKey()}`
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 model: 'gpt-4o-mini',

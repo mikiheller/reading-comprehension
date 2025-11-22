@@ -92,7 +92,7 @@ async function generateNewStory() {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                model: 'o1',
+                model: 'gpt-5.1',
                 messages: [{
                     role: 'system',
                     content: `You are a helpful assistant creating reading comprehension content for children at the ${userConfig.gradeLevel} reading level.`
@@ -332,7 +332,7 @@ async function assessAnswer(questionIndex, spokenAnswer) {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                model: 'o1',
+                model: 'gpt-5.1',
                 messages: [{
                     role: 'system',
                     content: 'You are a patient and encouraging teacher assessing a 6-year-old child\'s reading comprehension answer. Be kind and supportive.'

@@ -10,7 +10,8 @@ let userConfig = {
     storyLength: 'short',
     topicArea: 'ocean animals'
 };
-let activeRecognitions = [null, null]; // Track active recognition instances
+let mediaRecorders = [null, null]; // Track active recording instances
+let audioChunks = [[], []]; // Store audio chunks for each question
 const MAX_RECENT_TOPICS = 5; // Remember last 5 topics
 
 // Load recent topics from localStorage (persists across browser sessions)
@@ -27,9 +28,9 @@ try {
 
 // Initialize the app
 document.addEventListener('DOMContentLoaded', async () => {
-    // Check for browser support
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-        alert('Sorry! Your browser doesn\'t support speech recognition. Please use Chrome or Edge.');
+    // Check for MediaRecorder support (needed for Whisper)
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert('Sorry! Your browser doesn\'t support audio recording. Please use a modern browser.');
         return;
     }
 
@@ -91,7 +92,7 @@ async function generateNewStory() {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                model: 'gpt-4o-mini',
+                model: 'o1',
                 messages: [{
                     role: 'system',
                     content: `You are a helpful assistant creating reading comprehension content for children at the ${userConfig.gradeLevel} reading level.`
@@ -201,108 +202,110 @@ Make sure:
 - Questions test basic comprehension (who, what, where, when, why, how)`;
 }
 
-// Toggle speech recognition on/off
+// Toggle audio recording on/off
 function toggleListening(questionIndex) {
-    if (activeRecognitions[questionIndex]) {
-        // Stop listening
+    if (mediaRecorders[questionIndex] && mediaRecorders[questionIndex].state === 'recording') {
+        // Stop recording
         stopListening(questionIndex);
     } else {
-        // Start listening
+        // Start recording
         startListening(questionIndex);
     }
 }
 
-// Speech recognition with manual stop
-function startListening(questionIndex) {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-    
-    recognition.lang = 'en-US';
-    recognition.interimResults = true; // Show interim results
-    recognition.maxAlternatives = 1;
-    recognition.continuous = true; // Keep listening until manually stopped
-
+// Audio recording with Whisper transcription
+async function startListening(questionIndex) {
     const micBtn = document.getElementById(`micBtn${questionIndex + 1}`);
     const transcript = document.getElementById(`transcript${questionIndex + 1}`);
     
-    // Store the recognition instance
-    activeRecognitions[questionIndex] = recognition;
-    
-    // Update button state
-    micBtn.classList.add('listening');
-    micBtn.querySelector('.button-text').textContent = 'Click to Finish Answering';
-
-    let finalTranscript = '';
-
-    recognition.onstart = () => {
-        console.log('Speech recognition started');
-        transcript.textContent = 'Listening...';
-    };
-
-    recognition.onresult = (event) => {
-        let interimTranscript = '';
-        
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-            const transcriptPiece = event.results[i][0].transcript;
-            if (event.results[i].isFinal) {
-                finalTranscript += transcriptPiece + ' ';
-            } else {
-                interimTranscript += transcriptPiece;
-            }
-        }
-        
-        // Show what's being said in real-time
-        transcript.textContent = `You said: "${finalTranscript}${interimTranscript}"`;
-    };
-
-    recognition.onerror = (event) => {
-        console.error('Speech recognition error:', event.error);
-        
-        // Handle specific error types
-        if (event.error === 'not-allowed' || event.error === 'permission-denied') {
-            transcript.textContent = 'Please allow microphone access in your browser settings and refresh the page.';
-        } else if (event.error === 'no-speech') {
-            // Don't show error for no-speech, just keep listening
-            return;
-        } else if (event.error === 'aborted') {
-            // Normal stop, don't show error
-            return;
-        } else {
-            transcript.textContent = 'Sorry, something went wrong. Please try again!';
-        }
-        
-        activeRecognitions[questionIndex] = null;
-        resetMicButton(questionIndex);
-    };
-
-    recognition.onend = () => {
-        console.log('Speech recognition ended');
-        
-        // If there's a final transcript, assess it
-        if (finalTranscript.trim()) {
-            assessAnswer(questionIndex, finalTranscript.trim());
-        } else if (transcript.textContent === 'Listening...') {
-            transcript.textContent = 'Click the button and speak your answer!';
-        }
-        
-        activeRecognitions[questionIndex] = null;
-        resetMicButton(questionIndex);
-    };
-
     try {
-        recognition.start();
+        // Request microphone access
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        
+        // Create MediaRecorder
+        const mediaRecorder = new MediaRecorder(stream);
+        mediaRecorders[questionIndex] = mediaRecorder;
+        audioChunks[questionIndex] = [];
+        
+        // Update button state
+        micBtn.classList.add('listening');
+        micBtn.querySelector('.button-text').textContent = 'Click to Finish Answering';
+        transcript.textContent = 'Recording...';
+        
+        // Collect audio data
+        mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+                audioChunks[questionIndex].push(event.data);
+            }
+        };
+        
+        // When recording stops, transcribe with Whisper
+        mediaRecorder.onstop = async () => {
+            // Stop all tracks
+            stream.getTracks().forEach(track => track.stop());
+            
+            // Create audio blob
+            const audioBlob = new Blob(audioChunks[questionIndex], { type: 'audio/webm' });
+            
+            // Convert to base64
+            const reader = new FileReader();
+            reader.readAsDataURL(audioBlob);
+            reader.onloadend = async () => {
+                const base64Audio = reader.result.split(',')[1];
+                
+                // Show transcribing message
+                transcript.textContent = 'Transcribing...';
+                
+                try {
+                    // Call Whisper API via our serverless function
+                    const response = await fetch('/api/transcribe', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            audio: base64Audio
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok && data.text) {
+                        const spokenText = data.text.trim();
+                        transcript.textContent = `You said: "${spokenText}"`;
+                        
+                        // Assess the answer
+                        assessAnswer(questionIndex, spokenText);
+                    } else {
+                        transcript.textContent = 'Sorry, I couldn\'t understand that. Please try again!';
+                        resetMicButton(questionIndex);
+                    }
+                } catch (error) {
+                    console.error('Error transcribing:', error);
+                    transcript.textContent = 'Error transcribing audio. Please try again!';
+                    resetMicButton(questionIndex);
+                }
+            };
+            
+            // Clean up
+            mediaRecorders[questionIndex] = null;
+            audioChunks[questionIndex] = [];
+        };
+        
+        // Start recording
+        mediaRecorder.start();
+        console.log('Recording started');
+        
     } catch (error) {
-        console.error('Error starting recognition:', error);
-        transcript.textContent = 'Error starting microphone. Please try again!';
-        activeRecognitions[questionIndex] = null;
+        console.error('Error accessing microphone:', error);
+        transcript.textContent = 'Please allow microphone access and try again!';
         resetMicButton(questionIndex);
     }
 }
 
 function stopListening(questionIndex) {
-    if (activeRecognitions[questionIndex]) {
-        activeRecognitions[questionIndex].stop();
-        activeRecognitions[questionIndex] = null;
+    if (mediaRecorders[questionIndex] && mediaRecorders[questionIndex].state === 'recording') {
+        mediaRecorders[questionIndex].stop();
     }
 }
 
@@ -329,7 +332,7 @@ async function assessAnswer(questionIndex, spokenAnswer) {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                model: 'gpt-4o-mini',
+                model: 'o1',
                 messages: [{
                     role: 'system',
                     content: 'You are a patient and encouraging teacher assessing a 6-year-old child\'s reading comprehension answer. Be kind and supportive.'

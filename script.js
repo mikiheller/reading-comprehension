@@ -383,6 +383,9 @@ Be generous in your assessment - if the child shows basic understanding even if 
             `;
         }
 
+        // Reset the button state
+        resetMicButton(questionIndex);
+
     } catch (error) {
         console.error('Error assessing answer:', error);
         feedbackDiv.className = 'feedback incorrect';
@@ -390,6 +393,9 @@ Be generous in your assessment - if the child shows basic understanding even if 
             <div class="x-mark">✗</div>
             <div class="hint-text">Oops! Something went wrong. Please try answering again.</div>
         `;
+        
+        // Reset the button state
+        resetMicButton(questionIndex);
     }
 }
 

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reading Time with Asher! 📚</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📚 Reading Time! 📚</h1>
+        </header>
+
+        <div id="configSection" class="config-section">
+            <h2>Let's create your story!</h2>
+            <div class="config-form">
+                <div class="form-group">
+                    <label for="gradeLevel">Reading Level:</label>
+                    <select id="gradeLevel" class="config-select">
+                        <option value="Kindergarten">Kindergarten</option>
+                        <option value="1st grade">1st Grade</option>
+                        <option value="2nd grade" selected>2nd Grade</option>
+                        <option value="3rd grade">3rd Grade</option>
+                        <option value="4th grade">4th Grade</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="storyLength">Story Length:</label>
+                    <select id="storyLength" class="config-select">
+                        <option value="short" selected>Short (4 sentences)</option>
+                        <option value="medium">Medium (6 sentences)</option>
+                        <option value="long">Long (8 sentences)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="topicArea">Topic:</label>
+                    <select id="topicArea" class="config-select">
+                        <option value="ocean animals">Ocean Animals</option>
+                        <option value="jungle animals">Jungle Animals</option>
+                        <option value="farm animals">Farm Animals</option>
+                        <option value="insects and bugs">Insects and Bugs</option>
+                        <option value="space and planets">Space and Planets</option>
+                        <option value="dinosaurs">Dinosaurs</option>
+                        <option value="plants and trees">Plants and Trees</option>
+                        <option value="weather and seasons">Weather and Seasons</option>
+                        <option value="the human body">The Human Body</option>
+                        <option value="history">History</option>
+                        <option value="planes and rockets">Planes and Rockets</option>
+                        <option value="cars, trains, and other vehicles">Cars, Trains, and Other Vehicles</option>
+                    </select>
+                </div>
+
+                <button id="generateStoryBtn" class="generate-btn">Generate Story! 🎉</button>
+            </div>
+        </div>
+
+        <div id="loadingScreen" class="loading-screen" style="display: none;">
+            <div class="spinner"></div>
+            <p>Creating your story...</p>
+        </div>
+
+        <main id="mainContent" style="display: none;">
+            <section class="reading-passage">
+                <h2>Read this story:</h2>
+                <div id="passageText" class="passage-text"></div>
+            </section>
+
+            <section class="questions-section">
+                <div class="question-card" id="question1Card">
+                    <h3>Question 1:</h3>
+                    <p id="question1Text" class="question-text"></p>
+                    <button class="mic-button" id="micBtn1">
+                        <span class="mic-icon">🎤</span>
+                        <span class="button-text">Click to Answer</span>
+                    </button>
+                    <div id="transcript1" class="transcript"></div>
+                    <div id="feedback1" class="feedback"></div>
+                </div>
+
+                <div class="question-card" id="question2Card">
+                    <h3>Question 2:</h3>
+                    <p id="question2Text" class="question-text"></p>
+                    <button class="mic-button" id="micBtn2">
+                        <span class="mic-icon">🎤</span>
+                        <span class="button-text">Click to Answer</span>
+                    </button>
+                    <div id="transcript2" class="transcript"></div>
+                    <div id="feedback2" class="feedback"></div>
+                </div>
+            </section>
+
+            <div id="completionMessage" class="completion-message" style="display: none;">
+                <h2>🎉 Great job! 🎉</h2>
+            </div>
+
+            <button id="newStoryBtn" class="new-story-btn-bottom">Create New Story</button>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+

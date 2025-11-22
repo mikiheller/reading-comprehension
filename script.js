@@ -244,6 +244,9 @@ async function startListening(questionIndex) {
             // Stop all tracks
             stream.getTracks().forEach(track => track.stop());
             
+            // Reset button immediately when recording stops
+            resetMicButton(questionIndex);
+            
             // Create audio blob
             const audioBlob = new Blob(audioChunks[questionIndex], { type: 'audio/webm' });
             
@@ -274,16 +277,14 @@ async function startListening(questionIndex) {
                         const spokenText = data.text.trim();
                         transcript.textContent = `You said: "${spokenText}"`;
                         
-                        // Assess the answer
+                        // Assess the answer (this will NOT reset button again since we already did)
                         assessAnswer(questionIndex, spokenText);
                     } else {
                         transcript.textContent = 'Sorry, I couldn\'t understand that. Please try again!';
-                        resetMicButton(questionIndex);
                     }
                 } catch (error) {
                     console.error('Error transcribing:', error);
                     transcript.textContent = 'Error transcribing audio. Please try again!';
-                    resetMicButton(questionIndex);
                 }
             };
             
@@ -383,9 +384,6 @@ Be generous in your assessment - if the child shows basic understanding even if 
             `;
         }
 
-        // Reset the button state
-        resetMicButton(questionIndex);
-
     } catch (error) {
         console.error('Error assessing answer:', error);
         feedbackDiv.className = 'feedback incorrect';
@@ -393,9 +391,6 @@ Be generous in your assessment - if the child shows basic understanding even if 
             <div class="x-mark">✗</div>
             <div class="hint-text">Oops! Something went wrong. Please try answering again.</div>
         `;
-        
-        // Reset the button state
-        resetMicButton(questionIndex);
     }
 }
 
